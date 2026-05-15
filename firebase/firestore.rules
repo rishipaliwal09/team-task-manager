@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function userExists() {
+      return isSignedIn() && exists(userPath());
+    }
+
+    function userRole() {
+      return userExists() ? get(userPath()).data.role : '';
+    }
+
+    function isAdmin() {
+      return userExists() && userRole() == 'admin';
+    }
+
+    function isProjectMember(projectId) {
+      let project = get(/databases/$(database)/documents/projects/$(projectId));
+      return project.data.createdBy == request.auth.uid ||
+        request.auth.uid in project.data.members;
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role in ['admin', 'member'];
+      allow update: if request.auth.uid == userId || isAdmin();
+    }
+
+    // Projects
+    match /projects/{projectId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.createdBy == request.auth.uid ||
+        request.auth.uid in resource.data.members
+      );
+      allow create: if isAdmin()
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    function canAccessTask(taskId) {
+      let task = get(/databases/$(database)/documents/tasks/$(taskId));
+      return isAdmin() ||
+        task.data.assignedTo == request.auth.uid ||
+        task.data.createdBy == request.auth.uid ||
+        isProjectMember(task.data.projectId);
+    }
+
+    // Tasks
+    match /tasks/{taskId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.assignedTo == request.auth.uid ||
+        resource.data.createdBy == request.auth.uid ||
+        isProjectMember(resource.data.projectId)
+      );
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        resource.data.assignedTo == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+      );
+
+      match /updates/{updateId} {
+        allow read: if isSignedIn() && canAccessTask(taskId);
+        allow create: if isSignedIn() && (
+          isAdmin() ||
+          get(/databases/$(database)/documents/tasks/$(taskId)).data.assignedTo == request.auth.uid
+        );
+      }
+    }
+  }
+}
