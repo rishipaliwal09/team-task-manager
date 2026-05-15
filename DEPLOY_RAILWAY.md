@@ -44,8 +44,10 @@ Open the service → **Settings**:
 | Setting | Value |
 |--------|--------|
 | **Root Directory** | `client` |
-| **Build Command** | `npm install && npm run build` |
+| **Build Command** | `npm install --include=dev && npm run build` |
 | **Start Command** | `npm start` |
+
+**Do NOT use `cd client` in build/start commands when Root Directory is already `client`.**
 
 Or leave defaults if `client/railway.json` is detected.
 

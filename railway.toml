@@ -1,7 +1,0 @@
-# Use this if Root Directory is NOT set to "client" in Railway settings
-[build]
-builder = "nixpacks"
-buildCommand = "cd client && npm install --include=dev && npm run build"
-
-[deploy]
-startCommand = "cd client && npm start"
