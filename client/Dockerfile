@@ -27,10 +27,12 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-RUN npm install -g serve@14.2.4
-
+COPY package.json package-lock.json ./
+COPY serve.js ./
 COPY --from=build /app/dist ./dist
+
+RUN npm ci --omit=dev
 
 ENV NODE_ENV=production
 
-CMD ["sh", "-c", "serve -s dist -l tcp://0.0.0.0:${PORT:-3000}"]
+CMD ["node", "serve.js"]
