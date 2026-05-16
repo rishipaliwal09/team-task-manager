@@ -1,3 +1,4 @@
+# Stage 1: Build React app
 FROM node:20-alpine AS build
 WORKDIR /app
 
@@ -24,15 +25,15 @@ ENV VITE_FIREBASE_MEASUREMENT_ID=$VITE_FIREBASE_MEASUREMENT_ID
 
 RUN npm run build
 
+# Stage 2: Small Node server (CommonJS — works on Railway)
 FROM node:20-alpine
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-COPY serve.js ./
+COPY serve.cjs ./
 COPY --from=build /app/dist ./dist
 
-RUN npm ci --omit=dev
+RUN npm install express@4.21.2 --omit=dev --no-package-lock
 
 ENV NODE_ENV=production
 
-CMD ["node", "serve.js"]
+CMD ["node", "serve.cjs"]
