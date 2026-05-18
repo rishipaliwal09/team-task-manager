@@ -11,8 +11,8 @@ export default function StatCard({ label, value, accent = 'indigo' }) {
     <div
       className={`rounded-2xl border bg-gradient-to-br p-5 ${accents[accent] || accents.indigo}`}
     >
-      <p className="text-sm text-slate-400">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-white">{value}</p>
+      <p className="text-sm text-slate-600 dark:text-slate-400">{label}</p>
+      <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
     </div>
   );
 }
